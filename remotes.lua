@@ -3,6 +3,7 @@ local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
+repeat task.wait() until game:IsLoaded()
 repeat task.wait() until player
 repeat task.wait() until player:FindFirstChild("PlayerGui")
 
@@ -18,6 +19,7 @@ main.BackgroundColor3 = Color3.fromRGB(18,18,22)
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
+main.Visible = true
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
 
@@ -31,15 +33,15 @@ Instance.new("UICorner", header).CornerRadius = UDim.new(0,12)
 local title = Instance.new("TextLabel", header)
 title.Size = UDim2.new(1,0,1,0)
 title.BackgroundTransparency = 1
-title.Text = "remotes.lua | by larpingrentals (Insert / RShift)"
-title.TextColor3 = Color3.new(1,1,1)
+title.Text = "remotes.lua  |  by larpingrentals   (Insert = Toggle)"
+title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 
 local search = Instance.new("TextBox", main)
 search.Position = UDim2.new(0,15,0,55)
 search.Size = UDim2.new(1,-30,0,32)
-search.PlaceholderText = "Search..."
+search.PlaceholderText = "Search name / path / player..."
 search.BackgroundColor3 = Color3.fromRGB(32,32,38)
 search.TextColor3 = Color3.new(1,1,1)
 search.Font = Enum.Font.Gotham
@@ -81,7 +83,7 @@ info.TextSize = 14
 local input = Instance.new("TextBox", infoFrame)
 input.Position = UDim2.new(0,10,0,180)
 input.Size = UDim2.new(1,-20,0,40)
-input.PlaceholderText = "Args: 1,true,hello"
+input.PlaceholderText = "Arguments: 1,true,hello"
 input.BackgroundColor3 = Color3.fromRGB(35,35,42)
 input.TextColor3 = Color3.new(1,1,1)
 input.Font = Enum.Font.Gotham
@@ -106,27 +108,38 @@ local remoteMap = {}
 local selected
 
 local function getOwner(obj)
+
 	local p = obj:FindFirstAncestorOfClass("Player")
+
 	if p then
 		return "Player: "..p.Name
 	end
+
 	return "Global"
 end
 
 local function parseArgs(text)
+
 	local args = {}
+
 	for part in string.gmatch(text,"[^,]+") do
+
 		part = part:match("^%s*(.-)%s*$")
+
 		if tonumber(part) then
 			table.insert(args, tonumber(part))
+
 		elseif part == "true" then
 			table.insert(args,true)
+
 		elseif part == "false" then
 			table.insert(args,false)
+
 		else
 			table.insert(args,part)
 		end
 	end
+
 	return args
 end
 
@@ -141,7 +154,7 @@ local function addRemote(obj)
 	local button = Instance.new("TextButton", listFrame)
 
 	button.Size = UDim2.new(1,-8,0,30)
-	button.Text = "["..obj.ClassName.."] "..obj.Name.." | "..owner
+	button.Text = "["..obj.ClassName.."] "..obj.Name.."  |  "..owner
 	button.TextXAlignment = Left
 	button.BackgroundColor3 = Color3.fromRGB(35,35,42)
 	button.TextColor3 = Color3.new(1,1,1)
@@ -170,19 +183,16 @@ end
 
 task.spawn(function()
 
-	task.wait(2)
+	while true do
 
-	for _,v in ipairs(game:GetDescendants()) do
-		if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-			addRemote(v)
+		for _,v in ipairs(game:GetDescendants()) do
+
+			if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+				addRemote(v)
+			end
 		end
-	end
-end)
 
-game.DescendantAdded:Connect(function(obj)
-
-	if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-		addRemote(obj)
+		task.wait(2)
 	end
 end)
 
@@ -191,8 +201,11 @@ search:GetPropertyChangedSignal("Text"):Connect(function()
 	local q = search.Text:lower()
 
 	for _,b in ipairs(listFrame:GetChildren()) do
+
 		if b:IsA("TextButton") then
-			b.Visible = b.Text:lower():find(q) ~= nil
+
+			b.Visible =
+				b.Text:lower():find(q) ~= nil
 		end
 	end
 end)
@@ -204,8 +217,11 @@ run.MouseButton1Click:Connect(function()
 	local args = parseArgs(input.Text)
 
 	if selected:IsA("RemoteEvent") then
+
 		selected:FireServer(unpack(args))
+
 	elseif selected:IsA("RemoteFunction") then
+
 		selected:InvokeServer(unpack(args))
 	end
 end)
@@ -214,8 +230,7 @@ UIS.InputBegan:Connect(function(i,g)
 
 	if g then return end
 
-	if i.KeyCode == Enum.KeyCode.Insert
-	or i.KeyCode == Enum.KeyCode.RightShift then
+	if i.KeyCode == Enum.KeyCode.Insert then
 
 		main.Visible = not main.Visible
 	end
