@@ -1,107 +1,114 @@
--- Simple Remote Spy + Trigger UI
--- Loadstring Ready
+-- Remote Spy + Trigger (Stable Version)
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local RS = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
-repeat task.wait() until player and player:FindFirstChild("PlayerGui")
 
-------------------------------------------------
+repeat task.wait() until player
+repeat task.wait() until player:FindFirstChild("PlayerGui")
+repeat task.wait() until player.Character
+
+--------------------------------------------------
+-- Wait for at least one remote
+--------------------------------------------------
+
+task.spawn(function()
+	while true do
+		if RS:FindFirstChildWhichIsA("RemoteEvent", true)
+		or RS:FindFirstChildWhichIsA("RemoteFunction", true) then
+			break
+		end
+		task.wait(1)
+	end
+end)
+
+--------------------------------------------------
 -- GUI
-------------------------------------------------
+--------------------------------------------------
 
 local gui = Instance.new("ScreenGui")
-gui.Name = "RemoteTool"
 gui.ResetOnSpawn = false
 gui.Parent = player.PlayerGui
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,900,0,500)
-main.Position = UDim2.new(0.5,-450,0.5,-250)
+main.Size = UDim2.new(0,850,0,480)
+main.Position = UDim2.new(0.5,-425,0.5,-240)
 main.BackgroundColor3 = Color3.fromRGB(20,20,25)
 main.BorderSizePixel = 0
-main.Visible = true
 main.Active = true
 main.Draggable = true
 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
 
-------------------------------------------------
+--------------------------------------------------
 -- Title
-------------------------------------------------
+--------------------------------------------------
 
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,40)
 title.BackgroundColor3 = Color3.fromRGB(30,30,40)
-title.Text = "Remote Spy & Trigger   (Insert = Toggle)"
+title.Text = "Remote Spy & Trigger  |  Insert = Toggle"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
+title.TextSize = 16
 title.BorderSizePixel = 0
 
-------------------------------------------------
--- Panels
-------------------------------------------------
+--------------------------------------------------
+-- Search
+--------------------------------------------------
 
-local function makePanel(x)
+local search = Instance.new("TextBox", main)
+search.Size = UDim2.new(1,-20,0,32)
+search.Position = UDim2.new(0,10,0,45)
+search.PlaceholderText = "Search remotes..."
+search.BackgroundColor3 = Color3.fromRGB(35,35,40)
+search.TextColor3 = Color3.new(1,1,1)
+search.Font = Enum.Font.Gotham
+search.TextSize = 14
+search.BorderSizePixel = 0
 
-	local f = Instance.new("Frame", main)
-	f.Position = UDim2.new(0,x,0,50)
-	f.Size = UDim2.new(0,280,1,-60)
-	f.BackgroundColor3 = Color3.fromRGB(25,25,30)
-	f.BorderSizePixel = 0
+Instance.new("UICorner", search)
 
-	Instance.new("UICorner", f).CornerRadius = UDim.new(0,10)
+--------------------------------------------------
+-- List
+--------------------------------------------------
 
-	return f
-end
+local list = Instance.new("ScrollingFrame", main)
+list.Position = UDim2.new(0,10,0,85)
+list.Size = UDim2.new(0.45,-15,1,-95)
+list.CanvasSize = UDim2.new(0,0,0,0)
+list.ScrollBarThickness = 5
+list.BackgroundTransparency = 1
 
-local spyPanel = makePanel(10)
-local listPanel = makePanel(310)
-local controlPanel = makePanel(610)
+local layout = Instance.new("UIListLayout", list)
+layout.Padding = UDim.new(0,4)
 
-------------------------------------------------
--- Scrolling Frames
-------------------------------------------------
+--------------------------------------------------
+-- Info
+--------------------------------------------------
 
-local function makeScroll(parent)
-
-	local s = Instance.new("ScrollingFrame", parent)
-	s.Size = UDim2.new(1,-10,1,-10)
-	s.Position = UDim2.new(0,5,0,5)
-	s.CanvasSize = UDim2.new(0,0,0,0)
-	s.ScrollBarThickness = 5
-	s.BackgroundTransparency = 1
-	s.BorderSizePixel = 0
-
-	local l = Instance.new("UIListLayout", s)
-	l.Padding = UDim.new(0,4)
-
-	return s,l
-end
-
-local spyList, spyLayout = makeScroll(spyPanel)
-local remoteList, remoteLayout = makeScroll(listPanel)
-
-------------------------------------------------
--- Controls
-------------------------------------------------
-
-local info = Instance.new("TextLabel", controlPanel)
-info.Size = UDim2.new(1,-10,0,80)
-info.Position = UDim2.new(0,5,0,5)
-info.BackgroundTransparency = 1
-info.Text = "Select a Remote"
+local info = Instance.new("TextLabel", main)
+info.Position = UDim2.new(0.45,10,0,85)
+info.Size = UDim2.new(0.55,-20,0,120)
+info.BackgroundColor3 = Color3.fromRGB(25,25,30)
 info.TextWrapped = true
+info.Text = "Select a Remote"
 info.TextColor3 = Color3.new(1,1,1)
 info.Font = Enum.Font.Gotham
 info.TextSize = 14
+info.BorderSizePixel = 0
 
-local input = Instance.new("TextBox", controlPanel)
-input.Size = UDim2.new(1,-10,0,40)
-input.Position = UDim2.new(0,5,0,90)
+Instance.new("UICorner", info)
+
+--------------------------------------------------
+-- Input
+--------------------------------------------------
+
+local input = Instance.new("TextBox", main)
+input.Position = UDim2.new(0.45,10,0,215)
+input.Size = UDim2.new(0.55,-20,0,40)
 input.PlaceholderText = "Args: 1,true,hello"
 input.BackgroundColor3 = Color3.fromRGB(35,35,40)
 input.TextColor3 = Color3.new(1,1,1)
@@ -109,30 +116,34 @@ input.Font = Enum.Font.Gotham
 input.TextSize = 14
 input.BorderSizePixel = 0
 
-Instance.new("UICorner", input).CornerRadius = UDim.new(0,6)
+Instance.new("UICorner", input)
 
-local runBtn = Instance.new("TextButton", controlPanel)
-runBtn.Size = UDim2.new(1,-10,0,45)
-runBtn.Position = UDim2.new(0,5,0,145)
-runBtn.Text = "Fire / Invoke"
-runBtn.BackgroundColor3 = Color3.fromRGB(70,120,200)
-runBtn.TextColor3 = Color3.new(1,1,1)
-runBtn.Font = Enum.Font.GothamBold
-runBtn.TextSize = 16
-runBtn.BorderSizePixel = 0
+--------------------------------------------------
+-- Run
+--------------------------------------------------
 
-Instance.new("UICorner", runBtn).CornerRadius = UDim.new(0,6)
+local run = Instance.new("TextButton", main)
+run.Position = UDim2.new(0.45,10,0,265)
+run.Size = UDim2.new(0.55,-20,0,45)
+run.Text = "Fire / Invoke"
+run.BackgroundColor3 = Color3.fromRGB(70,120,200)
+run.TextColor3 = Color3.new(1,1,1)
+run.Font = Enum.Font.GothamBold
+run.TextSize = 15
+run.BorderSizePixel = 0
 
-------------------------------------------------
+Instance.new("UICorner", run)
+
+--------------------------------------------------
 -- Logic
-------------------------------------------------
+--------------------------------------------------
 
-local selected
 local remotes = {}
+local selected
 
-------------------------------------------------
--- Arg Parser
-------------------------------------------------
+--------------------------------------------------
+-- Parse Args
+--------------------------------------------------
 
 local function parseArgs(txt)
 
@@ -146,119 +157,92 @@ local function parseArgs(txt)
 			table.insert(args, tonumber(part))
 
 		elseif part == "true" then
-			table.insert(args, true)
+			table.insert(args,true)
 
 		elseif part == "false" then
-			table.insert(args, false)
+			table.insert(args,false)
 
 		else
-			table.insert(args, part)
+			table.insert(args,part)
 		end
 	end
 
 	return args
 end
 
-------------------------------------------------
--- Spy Logger
-------------------------------------------------
-
-local function log(text)
-
-	local l = Instance.new("TextLabel", spyList)
-	l.Size = UDim2.new(1,-6,0,22)
-	l.BackgroundTransparency = 1
-	l.TextWrapped = true
-	l.TextXAlignment = Left
-	l.Text = text
-	l.TextColor3 = Color3.fromRGB(200,200,200)
-	l.Font = Enum.Font.Gotham
-	l.TextSize = 12
-
-	task.wait()
-
-	spyList.CanvasSize = UDim2.new(0,0,0,spyLayout.AbsoluteContentSize.Y+10)
-	spyList.CanvasPosition = Vector2.new(0,math.max(0,spyList.CanvasSize.Y.Offset-200))
-end
-
-------------------------------------------------
--- Remote Scan
-------------------------------------------------
+--------------------------------------------------
+-- Scan
+--------------------------------------------------
 
 local function scan()
 
-	remotes = {}
-
-	for _,v in ipairs(remoteList:GetChildren()) do
+	for _,v in ipairs(list:GetChildren()) do
 		if v:IsA("TextButton") then
 			v:Destroy()
 		end
 	end
 
+	remotes = {}
+
 	for _,obj in ipairs(game:GetDescendants()) do
 
 		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-			table.insert(remotes, obj)
+
+			table.insert(remotes,obj)
+
+			local b = Instance.new("TextButton", list)
+
+			b.Size = UDim2.new(1,-6,0,28)
+			b.Text = "["..obj.ClassName.."] "..obj:GetFullName()
+			b.BackgroundColor3 = Color3.fromRGB(35,35,40)
+			b.TextColor3 = Color3.new(1,1,1)
+			b.Font = Enum.Font.Gotham
+			b.TextSize = 12
+			b.BorderSizePixel = 0
+
+			Instance.new("UICorner", b)
+
+			b.MouseButton1Click:Connect(function()
+
+				selected = obj
+
+				info.Text =
+					"Name: "..obj.Name..
+					"\nType: "..obj.ClassName..
+					"\nPath:\n"..obj:GetFullName()
+			end)
 		end
-	end
-
-	for i,r in ipairs(remotes) do
-
-		local b = Instance.new("TextButton", remoteList)
-
-		b.Size = UDim2.new(1,-6,0,28)
-		b.Text = "["..r.ClassName.."] "..r.Name
-		b.BackgroundColor3 = Color3.fromRGB(35,35,40)
-		b.TextColor3 = Color3.new(1,1,1)
-		b.Font = Enum.Font.Gotham
-		b.TextSize = 13
-		b.BorderSizePixel = 0
-
-		Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
-
-		b.MouseButton1Click:Connect(function()
-
-			selected = r
-
-			info.Text =
-				"Name: "..r.Name..
-				"\nType: "..r.ClassName..
-				"\nPath:\n"..r:GetFullName()
-		end)
 	end
 
 	task.wait()
 
-	remoteList.CanvasSize = UDim2.new(0,0,0,remoteLayout.AbsoluteContentSize.Y+10)
+	list.CanvasSize =
+		UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+10)
 end
 
-------------------------------------------------
--- Hook Remotes (Spy)
-------------------------------------------------
+--------------------------------------------------
+-- Filter
+--------------------------------------------------
 
-local mt = getrawmetatable(game)
-setreadonly(mt,false)
+search:GetPropertyChangedSignal("Text"):Connect(function()
 
-local old = mt.__namecall
+	local q = search.Text:lower()
 
-mt.__namecall = newcclosure(function(self,...)
+	for _,b in ipairs(list:GetChildren()) do
 
-	local method = getnamecallmethod()
-	local args = {...}
+		if b:IsA("TextButton") then
 
-	if method == "FireServer" or method == "InvokeServer" then
-
-		log(method.." -> "..self:GetFullName())
+			b.Visible =
+				b.Text:lower():find(q) ~= nil
+		end
 	end
-
-	return old(self,...)
 end)
 
-------------------------------------------------
--- Run Button
-------------------------------------------------
+--------------------------------------------------
+-- Run
+--------------------------------------------------
 
-runBtn.MouseButton1Click:Connect(function()
+run.MouseButton1Click:Connect(function()
 
 	if not selected then return end
 
@@ -267,33 +251,42 @@ runBtn.MouseButton1Click:Connect(function()
 	if selected:IsA("RemoteEvent") then
 
 		selected:FireServer(unpack(args))
-		log("Manual Fire: "..selected.Name)
 
 	elseif selected:IsA("RemoteFunction") then
 
-		local res = selected:InvokeServer(unpack(args))
-		log("Manual Invoke: "..selected.Name.." | "..tostring(res))
+		selected:InvokeServer(unpack(args))
 	end
 end)
 
-------------------------------------------------
--- Toggle (Insert)
-------------------------------------------------
+--------------------------------------------------
+-- Toggle
+--------------------------------------------------
 
 UIS.InputBegan:Connect(function(i,g)
 
 	if g then return end
 
 	if i.KeyCode == Enum.KeyCode.Insert then
-
 		main.Visible = not main.Visible
 	end
 end)
 
-------------------------------------------------
--- Init
-------------------------------------------------
+--------------------------------------------------
+-- Auto Refresh
+--------------------------------------------------
 
-task.wait(1)
+task.spawn(function()
+
+	while true do
+		task.wait(5)
+		scan()
+	end
+
+end)
+
+--------------------------------------------------
+-- Init
+--------------------------------------------------
+
+task.wait(2)
 scan()
-log("Remote tool loaded")
