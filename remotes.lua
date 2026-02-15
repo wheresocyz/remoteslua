@@ -1,18 +1,10 @@
--- remotes.lua by larpingrentals
--- Stable Remote Viewer + Trigger
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
-repeat task.wait() until game:IsLoaded()
 repeat task.wait() until player
 repeat task.wait() until player:FindFirstChild("PlayerGui")
-
-------------------------------------------------
--- GUI
-------------------------------------------------
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "RemotesLarping"
@@ -29,10 +21,6 @@ main.Draggable = true
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
 
-------------------------------------------------
--- Header
-------------------------------------------------
-
 local header = Instance.new("Frame", main)
 header.Size = UDim2.new(1,0,0,45)
 header.BackgroundColor3 = Color3.fromRGB(28,28,35)
@@ -43,19 +31,15 @@ Instance.new("UICorner", header).CornerRadius = UDim.new(0,12)
 local title = Instance.new("TextLabel", header)
 title.Size = UDim2.new(1,0,1,0)
 title.BackgroundTransparency = 1
-title.Text = "remotes.lua  |  by larpingrentals   (Insert = Toggle)"
-title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Text = "remotes.lua | by larpingrentals (Insert / RShift)"
+title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
-
-------------------------------------------------
--- Search
-------------------------------------------------
 
 local search = Instance.new("TextBox", main)
 search.Position = UDim2.new(0,15,0,55)
 search.Size = UDim2.new(1,-30,0,32)
-search.PlaceholderText = "Search name / path / player..."
+search.PlaceholderText = "Search..."
 search.BackgroundColor3 = Color3.fromRGB(32,32,38)
 search.TextColor3 = Color3.new(1,1,1)
 search.Font = Enum.Font.Gotham
@@ -63,10 +47,6 @@ search.TextSize = 14
 search.BorderSizePixel = 0
 
 Instance.new("UICorner", search)
-
-------------------------------------------------
--- Panels
-------------------------------------------------
 
 local listFrame = Instance.new("ScrollingFrame", main)
 listFrame.Position = UDim2.new(0,15,0,95)
@@ -87,10 +67,6 @@ infoFrame.BorderSizePixel = 0
 
 Instance.new("UICorner", infoFrame)
 
-------------------------------------------------
--- Info
-------------------------------------------------
-
 local info = Instance.new("TextLabel", infoFrame)
 info.Position = UDim2.new(0,10,0,10)
 info.Size = UDim2.new(1,-20,0,160)
@@ -102,14 +78,10 @@ info.TextColor3 = Color3.new(1,1,1)
 info.Font = Enum.Font.Gotham
 info.TextSize = 14
 
-------------------------------------------------
--- Args
-------------------------------------------------
-
 local input = Instance.new("TextBox", infoFrame)
 input.Position = UDim2.new(0,10,0,180)
 input.Size = UDim2.new(1,-20,0,40)
-input.PlaceholderText = "Arguments: 1,true,hello"
+input.PlaceholderText = "Args: 1,true,hello"
 input.BackgroundColor3 = Color3.fromRGB(35,35,42)
 input.TextColor3 = Color3.new(1,1,1)
 input.Font = Enum.Font.Gotham
@@ -117,10 +89,6 @@ input.TextSize = 14
 input.BorderSizePixel = 0
 
 Instance.new("UICorner", input)
-
-------------------------------------------------
--- Run
-------------------------------------------------
 
 local run = Instance.new("TextButton", infoFrame)
 run.Position = UDim2.new(0,10,0,235)
@@ -134,57 +102,33 @@ run.BorderSizePixel = 0
 
 Instance.new("UICorner", run)
 
-------------------------------------------------
--- Logic
-------------------------------------------------
-
 local remoteMap = {}
 local selected
 
-------------------------------------------------
--- Utils
-------------------------------------------------
-
 local function getOwner(obj)
-
 	local p = obj:FindFirstAncestorOfClass("Player")
-
 	if p then
 		return "Player: "..p.Name
 	end
-
 	return "Global"
 end
 
-
 local function parseArgs(text)
-
 	local args = {}
-
 	for part in string.gmatch(text,"[^,]+") do
-
 		part = part:match("^%s*(.-)%s*$")
-
 		if tonumber(part) then
 			table.insert(args, tonumber(part))
-
 		elseif part == "true" then
 			table.insert(args,true)
-
 		elseif part == "false" then
 			table.insert(args,false)
-
 		else
 			table.insert(args,part)
 		end
 	end
-
 	return args
 end
-
-------------------------------------------------
--- Add Remote
-------------------------------------------------
 
 local function addRemote(obj)
 
@@ -197,7 +141,7 @@ local function addRemote(obj)
 	local button = Instance.new("TextButton", listFrame)
 
 	button.Size = UDim2.new(1,-8,0,30)
-	button.Text = "["..obj.ClassName.."] "..obj.Name.."  |  "..owner
+	button.Text = "["..obj.ClassName.."] "..obj.Name.." | "..owner
 	button.TextXAlignment = Left
 	button.BackgroundColor3 = Color3.fromRGB(35,35,42)
 	button.TextColor3 = Color3.new(1,1,1)
@@ -224,25 +168,16 @@ local function addRemote(obj)
 		UDim2.new(0,0,0,listLayout.AbsoluteContentSize.Y+10)
 end
 
-------------------------------------------------
--- Initial Scan
-------------------------------------------------
-
 task.spawn(function()
 
-	task.wait(3)
+	task.wait(2)
 
 	for _,v in ipairs(game:GetDescendants()) do
-
 		if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
 			addRemote(v)
 		end
 	end
 end)
-
-------------------------------------------------
--- Streaming Detection
-------------------------------------------------
 
 game.DescendantAdded:Connect(function(obj)
 
@@ -251,27 +186,16 @@ game.DescendantAdded:Connect(function(obj)
 	end
 end)
 
-------------------------------------------------
--- Search
-------------------------------------------------
-
 search:GetPropertyChangedSignal("Text"):Connect(function()
 
 	local q = search.Text:lower()
 
 	for _,b in ipairs(listFrame:GetChildren()) do
-
 		if b:IsA("TextButton") then
-
-			b.Visible =
-				b.Text:lower():find(q) ~= nil
+			b.Visible = b.Text:lower():find(q) ~= nil
 		end
 	end
 end)
-
-------------------------------------------------
--- Run
-------------------------------------------------
 
 run.MouseButton1Click:Connect(function()
 
@@ -280,24 +204,18 @@ run.MouseButton1Click:Connect(function()
 	local args = parseArgs(input.Text)
 
 	if selected:IsA("RemoteEvent") then
-
 		selected:FireServer(unpack(args))
-
 	elseif selected:IsA("RemoteFunction") then
-
 		selected:InvokeServer(unpack(args))
 	end
 end)
-
-------------------------------------------------
--- Toggle
-------------------------------------------------
 
 UIS.InputBegan:Connect(function(i,g)
 
 	if g then return end
 
-	if i.KeyCode == Enum.KeyCode.Insert then
+	if i.KeyCode == Enum.KeyCode.Insert
+	or i.KeyCode == Enum.KeyCode.RightShift then
 
 		main.Visible = not main.Visible
 	end
