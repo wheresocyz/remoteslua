@@ -1,5 +1,5 @@
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
+local CAS = game:GetService("ContextActionService")
 
 local player = Players.LocalPlayer
 
@@ -33,7 +33,7 @@ Instance.new("UICorner", header).CornerRadius = UDim.new(0,12)
 local title = Instance.new("TextLabel", header)
 title.Size = UDim2.new(1,0,1,0)
 title.BackgroundTransparency = 1
-title.Text = "remotes.lua  |  by larpingrentals   (Insert = Toggle)"
+title.Text = "remotes.lua  |  by larpingrentals   (Insert / RShift)"
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
@@ -204,8 +204,7 @@ search:GetPropertyChangedSignal("Text"):Connect(function()
 
 		if b:IsA("TextButton") then
 
-			b.Visible =
-				b.Text:lower():find(q) ~= nil
+			b.Visible = b.Text:lower():find(q) ~= nil
 		end
 	end
 end)
@@ -226,12 +225,17 @@ run.MouseButton1Click:Connect(function()
 	end
 end)
 
-UIS.InputBegan:Connect(function(i,g)
+local function toggleUI()
 
-	if g then return end
+	main.Visible = not main.Visible
 
-	if i.KeyCode == Enum.KeyCode.Insert then
+	return Enum.ContextActionResult.Sink
+end
 
-		main.Visible = not main.Visible
-	end
-end)
+CAS:BindAction(
+	"ToggleRemotesUI",
+	toggleUI,
+	false,
+	Enum.KeyCode.Insert,
+	Enum.KeyCode.RightShift
+)
