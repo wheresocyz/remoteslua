@@ -1,17 +1,29 @@
+-- remotes.lua (loadstring-ready)
+-- Insanely styled glassy remote/value UI
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
+-- Wait for character and PlayerGui
+repeat task.wait() until player and player:FindFirstChild("PlayerGui")
+local gui = Instance.new("ScreenGui")
+gui.Name = "RemoteValueUI"
+gui.ResetOnSpawn = false
+gui.Parent = player.PlayerGui
+
+-- Data
 local items, filtered, selected, logs, favorites = {}, {}, nil, {}, {}
 local currentTab = "All"
 
+-- Utils
 local function parseArgs(text)
     local args = {}
     for part in string.gmatch(text, "[^,]+") do
         part = part:match("^%s*(.-)%s*$")
-        local num = tonumber(part)
-        if num then table.insert(args,num)
+        local n = tonumber(part)
+        if n then table.insert(args,n)
         elseif part=="true" then table.insert(args,true)
         elseif part=="false" then table.insert(args,false)
         else table.insert(args,part)
@@ -25,43 +37,25 @@ local function logAction(text)
     if #logs>100 then table.remove(logs) end
 end
 
-local function addDemo()
-    if not game:FindFirstChild("ReplicatedStorage") then Instance.new("Folder",game).Name="ReplicatedStorage" end
-    local r=Instance.new("RemoteEvent")
-    r.Name="TestRemote"
-    r.Parent=game.ReplicatedStorage
-    local f=Instance.new("RemoteFunction")
-    f.Name="TestFunction"
-    f.Parent=game.ReplicatedStorage
-    local v=Instance.new("IntValue")
-    v.Name="Health"
-    v.Value=100
-    v.Parent=player
-end
-addDemo()
-
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.ResetOnSpawn = false
-
+-- Main Frame
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 850, 0, 550)
-main.Position = UDim2.new(0.5, -425, 0.5, -275)
-main.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-main.BackgroundTransparency = 0.15
+main.Size = UDim2.new(0,850,0,550)
+main.Position = UDim2.new(0.5,-425,0.5,-275)
+main.BackgroundColor3 = Color3.fromRGB(30,30,40)
+main.BackgroundTransparency = 0
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 20)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,20)
 
+-- Gradient overlay for glassy effect
 local grad = Instance.new("UIGradient", main)
-grad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(50,50,70)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(25,25,35))
-}
+grad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.fromRGB(50,50,70)), ColorSequenceKeypoint.new(1, Color3.fromRGB(25,25,35))}
 grad.Rotation = 45
 
+-- Shadow glow
 local shadow = Instance.new("ImageLabel", main)
-shadow.Size = UDim2.new(1, 60, 1, 60)
+shadow.Size = UDim2.new(1,60,1,60)
 shadow.Position = UDim2.new(0.5,0,0.5,0)
 shadow.AnchorPoint = Vector2.new(0.5,0.5)
 shadow.BackgroundTransparency = 1
@@ -70,6 +64,7 @@ shadow.ImageColor3 = Color3.fromRGB(0,255,255)
 shadow.ImageTransparency = 0.7
 shadow.ZIndex = -1
 
+-- Title bar
 local titleBar = Instance.new("Frame", main)
 titleBar.Size = UDim2.new(1,0,0,50)
 titleBar.BackgroundColor3 = Color3.fromRGB(35,35,45)
@@ -93,10 +88,9 @@ close.TextColor3 = Color3.fromRGB(255,100,100)
 close.TextSize = 16
 close.BackgroundTransparency = 0.3
 Instance.new("UICorner", close)
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
+-- Tabs
 local tabBar = Instance.new("Frame", main)
 tabBar.Size = UDim2.new(1,0,0,45)
 tabBar.Position = UDim2.new(0,0,0,50)
@@ -105,6 +99,7 @@ tabBar.BackgroundTransparency = 0.8
 local tabs = {"All","Remotes","Values","Players","Favorites","Logs"}
 local tabButtons = {}
 
+-- Tab creation
 for i,v in ipairs(tabs) do
     local b = Instance.new("TextButton", tabBar)
     b.Size = UDim2.new(0,130,1,0)
@@ -121,17 +116,17 @@ for i,v in ipairs(tabs) do
         TweenService:Create(b,TweenInfo.new(0.2),{BackgroundTransparency=0}):Play()
     end)
     b.MouseLeave:Connect(function()
-        if currentTab~=v then TweenService:Create(b,TweenInfo.new(0.2),{BackgroundTransparency=0.4}):Play()
-        end
+        if currentTab~=v then TweenService:Create(b,TweenInfo.new(0.2),{BackgroundTransparency=0.4}):Play() end
     end)
     b.MouseButton1Click:Connect(function()
         currentTab = v
-        for _,tb in pairs(tabButtons) do tb.BackgroundTransparency=0.4 end
+        for _,tb in pairs(tabButtons) do tb.BackgroundTransparency = 0.4 end
         b.BackgroundTransparency = 0
         buildList()
     end)
 end
 
+-- Search box
 local search = Instance.new("TextBox", main)
 search.Position = UDim2.new(0,15,0,105)
 search.Size = UDim2.new(0,300,0,35)
@@ -142,6 +137,7 @@ search.Font = Enum.Font.Gotham
 search.TextSize = 14
 Instance.new("UICorner", search)
 
+-- List frame
 local list = Instance.new("ScrollingFrame", main)
 list.Position = UDim2.new(0,15,0,150)
 list.Size = UDim2.new(0,300,1,-165)
@@ -152,6 +148,7 @@ Instance.new("UICorner", list)
 local layout = Instance.new("UIListLayout", list)
 layout.Padding = UDim.new(0,6)
 
+-- Info panel
 local panel = Instance.new("Frame", main)
 panel.Position = UDim2.new(0,330,0,105)
 panel.Size = UDim2.new(1,-345,1,-115)
@@ -187,32 +184,10 @@ runBtn.BackgroundColor3 = Color3.fromRGB(100,180,220)
 runBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", runBtn)
 
-runBtn.MouseButton1Click:Connect(function()
-    if not selected then return end
-    if selected:IsA("RemoteEvent") then
-        selected:FireServer(unpack(parseArgs(input.Text)))
-        logAction("Fired "..selected.Name.." | "..input.Text)
-    elseif selected:IsA("RemoteFunction") then
-        local r = selected:InvokeServer(unpack(parseArgs(input.Text)))
-        logAction("Invoked "..selected.Name.." -> "..tostring(r))
-    elseif selected:IsA("ValueBase") then
-        local t = input.Text
-        if selected:IsA("IntValue") or selected:IsA("NumberValue") then
-            selected.Value = tonumber(t) or selected.Value
-        elseif selected:IsA("BoolValue") then
-            selected.Value = (t=="true")
-        elseif selected:IsA("StringValue") then
-            selected.Value = t
-        elseif selected:IsA("Vector3Value") then
-            local p = parseArgs(t)
-            if #p==3 then selected.Value = Vector3.new(p[1],p[2],p[3]) end
-        end
-        logAction("Set "..selected.Name.." = "..tostring(selected.Value))
-    end
-    buildList()
-end)
-
+-- Scan for items
+local function scan()
     items = {}
+    repeat task.wait() until game:IsLoaded()
     for _,v in ipairs(game:GetDescendants()) do
         if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") or v:IsA("ValueBase") then
             table.insert(items,v)
@@ -220,7 +195,8 @@ end)
     end
 end
 
-function allowed(obj)
+-- Filter for current tab
+local function allowed(obj)
     if currentTab=="All" then return true end
     if currentTab=="Remotes" then return obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") end
     if currentTab=="Values" then return obj:IsA("ValueBase") end
@@ -230,10 +206,9 @@ function allowed(obj)
     return true
 end
 
+-- Build list UI
 function buildList()
-    for _,v in ipairs(list:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
-    end
+    for _,v in ipairs(list:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
     filtered = {}
     if currentTab=="Logs" then
         for _,v in ipairs(logs) do
@@ -278,7 +253,33 @@ function buildList()
     list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+10)
 end
 
+-- Run button
+runBtn.MouseButton1Click:Connect(function()
+    if not selected then return end
+    if selected:IsA("RemoteEvent") then
+        selected:FireServer(unpack(parseArgs(input.Text)))
+        logAction("Fired "..selected.Name.." | "..input.Text)
+    elseif selected:IsA("RemoteFunction") then
+        local r = selected:InvokeServer(unpack(parseArgs(input.Text)))
+        logAction("Invoked "..selected.Name.." -> "..tostring(r))
+    elseif selected:IsA("ValueBase") then
+        local t = input.Text
+        if selected:IsA("IntValue") or selected:IsA("NumberValue") then selected.Value = tonumber(t) or selected.Value
+        elseif selected:IsA("BoolValue") then selected.Value = (t=="true")
+        elseif selected:IsA("StringValue") then selected.Value = t
+        elseif selected:IsA("Vector3Value") then
+            local p = parseArgs(t)
+            if #p==3 then selected.Value = Vector3.new(p[1],p[2],p[3]) end
+        end
+        logAction("Set "..selected.Name.." = "..tostring(selected.Value))
+    end
+    buildList()
+end)
+
+-- Refresh on search change
 search:GetPropertyChangedSignal("Text"):Connect(buildList)
 
+-- Initial scan & build
+task.wait(1)
 scan()
 buildList()
