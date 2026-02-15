@@ -310,3 +310,88 @@ CAS:BindAction(
 	Enum.KeyCode.Insert,
 	Enum.KeyCode.RightShift
 )
+
+--------------------------------------------------
+-- REMOTE SPY
+--------------------------------------------------
+
+local SpyEnabled = true
+
+local LogFrame = Instance.new("Frame")
+LogFrame.Parent = main
+LogFrame.Position = UDim2.new(0,0,1,5)
+LogFrame.Size = UDim2.new(1,0,0,160)
+LogFrame.BackgroundColor3 = Color3.fromRGB(18,18,22)
+LogFrame.BorderSizePixel = 0
+LogFrame.Visible = true
+
+Instance.new("UICorner", LogFrame)
+
+local LogList = Instance.new("ScrollingFrame")
+LogList.Parent = LogFrame
+LogList.Size = UDim2.new(1,-10,1,-10)
+LogList.Position = UDim2.new(0,5,0,5)
+LogList.CanvasSize = UDim2.new(0,0,0,0)
+LogList.ScrollBarThickness = 5
+LogList.BackgroundTransparency = 1
+
+local LogLayout = Instance.new("UIListLayout")
+LogLayout.Parent = LogList
+LogLayout.Padding = UDim.new(0,4)
+
+local function addLog(text)
+
+	local label = Instance.new("TextLabel")
+
+	label.Parent = LogList
+	label.Size = UDim2.new(1,-5,0,22)
+	label.BackgroundTransparency = 1
+	label.TextWrapped = false
+	label.TextXAlignment = Left
+	label.Text = text
+	label.Font = Enum.Font.Code
+	label.TextSize = 13
+	label.TextColor3 = Color3.fromRGB(180,220,255)
+
+	task.wait()
+
+	LogList.CanvasSize =
+		UDim2.new(0,0,0,LogLayout.AbsoluteContentSize.Y+5)
+
+	LogList.CanvasPosition =
+		Vector2.new(0,LogList.CanvasSize.Y.Offset)
+end
+
+--------------------------------------------------
+-- Hook
+--------------------------------------------------
+
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+
+setreadonly(mt,false)
+
+mt.__namecall = newcclosure(function(self,...)
+
+	local method = getnamecallmethod()
+	local args = {...}
+
+	if SpyEnabled then
+
+		if method == "FireServer" or method == "InvokeServer" then
+
+			local msg = "["..method.."] "..self:GetFullName()
+
+			for i,v in ipairs(args) do
+				msg = msg.." | "..tostring(v)
+			end
+
+			addLog(msg)
+		end
+	end
+
+	return old(self,...)
+end)
+
+setreadonly(mt,true)
+
