@@ -1,91 +1,226 @@
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
 local player = Players.LocalPlayer
 
 local items = {}
-local selectedItem = nil
+local filtered = {}
+local selected = nil
+local favorites = {}
+local logs = {}
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "RemoteValueFinder"
-gui.Parent = player:WaitForChild("PlayerGui")
+local visible = true
+local minimized = false
+local currentTab = "All"
 
-local main = Instance.new("Frame")
-main.Parent = gui
-main.Size = UDim2.new(0, 520, 0, 420)
-main.Position = UDim2.new(0.5, -260, 0.5, -210)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+local gui = Instance.new("ScreenGui",player:WaitForChild("PlayerGui"))
+gui.ResetOnSpawn = false
+
+
+local main = Instance.new("Frame",gui)
+main.Size = UDim2.new(0,760,0,520)
+main.Position = UDim2.new(0.5,-380,0.5,-260)
+main.BackgroundColor3 = Color3.fromRGB(18,18,24)
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
+Instance.new("UICorner",main).CornerRadius = UDim.new(0,14)
 
-local title = Instance.new("TextLabel")
-title.Parent = main
-title.Size = UDim2.new(1,0,0,40)
-title.BackgroundColor3 = Color3.fromRGB(35,35,35)
-title.Text = "Remote & Value Finder"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 22
 
-local listFrame = Instance.new("ScrollingFrame")
-listFrame.Parent = main
-listFrame.Position = UDim2.new(0,10,0,50)
-listFrame.Size = UDim2.new(0,240,1,-60)
-listFrame.CanvasSize = UDim2.new(0,0,0,0)
-listFrame.ScrollBarThickness = 6
-listFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-listFrame.BorderSizePixel = 0
+local shadow = Instance.new("ImageLabel",main)
+shadow.AnchorPoint = Vector2.new(0.5,0.5)
+shadow.Position = UDim2.new(0.5,0,0.5,0)
+shadow.Size = UDim2.new(1,50,1,50)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageTransparency = 0.6
+shadow.ZIndex = -1
 
-local layout = Instance.new("UIListLayout", listFrame)
-layout.Padding = UDim.new(0,5)
 
-local info = Instance.new("TextLabel")
-info.Parent = main
-info.Position = UDim2.new(0,260,0,55)
-info.Size = UDim2.new(1,-270,0,80)
-info.BackgroundTransparency = 1
+local titleBar = Instance.new("Frame",main)
+titleBar.Size = UDim2.new(1,0,0,45)
+titleBar.BackgroundColor3 = Color3.fromRGB(26,26,34)
+titleBar.BorderSizePixel = 0
+Instance.new("UICorner",titleBar).CornerRadius = UDim.new(0,14)
+
+
+local title = Instance.new("TextLabel",titleBar)
+title.Size = UDim2.new(1,-120,1,0)
+title.Position = UDim2.new(0,15,0,0)
+title.BackgroundTransparency = 1
+title.Text = "remotes.lua - larpingrentals"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Left
+title.TextColor3 = Color3.fromRGB(230,230,255)
+
+
+local minimize = Instance.new("TextButton",titleBar)
+minimize.Position = UDim2.new(1,-90,0,7)
+minimize.Size = UDim2.new(0,35,0,30)
+minimize.Text = "-"
+minimize.Font = Enum.Font.GothamBold
+minimize.TextSize = 20
+minimize.TextColor3 = Color3.new(1,1,1)
+minimize.BackgroundColor3 = Color3.fromRGB(50,50,65)
+Instance.new("UICorner",minimize)
+
+
+local close = Instance.new("TextButton",titleBar)
+close.Position = UDim2.new(1,-45,0,7)
+close.Size = UDim2.new(0,35,0,30)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 14
+close.TextColor3 = Color3.new(1,1,1)
+close.BackgroundColor3 = Color3.fromRGB(150,60,60)
+Instance.new("UICorner",close)
+
+
+local tabBar = Instance.new("Frame",main)
+tabBar.Position = UDim2.new(0,0,0,45)
+tabBar.Size = UDim2.new(1,0,0,40)
+tabBar.BackgroundColor3 = Color3.fromRGB(22,22,30)
+tabBar.BorderSizePixel = 0
+
+
+local tabs = {"All","Remotes","Values","Players","Favorites","Logs"}
+
+
+local tabButtons = {}
+
+for i,v in ipairs(tabs) do
+
+	local b = Instance.new("TextButton",tabBar)
+	b.Size = UDim2.new(0,120,1,0)
+	b.Position = UDim2.new(0,(i-1)*125,0,0)
+	b.Text = v
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 13
+	b.BackgroundColor3 = Color3.fromRGB(30,30,40)
+	b.TextColor3 = Color3.fromRGB(200,200,200)
+	Instance.new("UICorner",b)
+
+	tabButtons[v] = b
+end
+
+
+local search = Instance.new("TextBox",main)
+search.Position = UDim2.new(0,15,0,95)
+search.Size = UDim2.new(0,300,0,36)
+search.PlaceholderText = "Search..."
+search.BackgroundColor3 = Color3.fromRGB(32,32,42)
+search.TextColor3 = Color3.new(1,1,1)
+search.BorderSizePixel = 0
+search.Font = Enum.Font.Gotham
+search.TextSize = 14
+search.ClearTextOnFocus = false
+Instance.new("UICorner",search)
+
+
+local list = Instance.new("ScrollingFrame",main)
+list.Position = UDim2.new(0,15,0,140)
+list.Size = UDim2.new(0,300,1,-155)
+list.BackgroundColor3 = Color3.fromRGB(22,22,30)
+list.ScrollBarThickness = 5
+list.BorderSizePixel = 0
+Instance.new("UICorner",list)
+
+local layout = Instance.new("UIListLayout",list)
+layout.Padding = UDim.new(0,6)
+
+
+local panel = Instance.new("Frame",main)
+panel.Position = UDim2.new(0,330,0,95)
+panel.Size = UDim2.new(1,-345,1,-110)
+panel.BackgroundColor3 = Color3.fromRGB(24,24,34)
+panel.BorderSizePixel = 0
+Instance.new("UICorner",panel)
+
+
+local info = Instance.new("TextLabel",panel)
+info.Position = UDim2.new(0,10,0,10)
+info.Size = UDim2.new(1,-20,0,140)
 info.TextWrapped = true
-info.Text = "Select an item"
+info.TextYAlignment = Top
+info.BackgroundTransparency = 1
+info.Font = Enum.Font.Gotham
+info.TextSize = 14
 info.TextColor3 = Color3.new(1,1,1)
-info.Font = Enum.Font.SourceSans
-info.TextSize = 16
-
-local inputBox = Instance.new("TextBox")
-inputBox.Parent = main
-inputBox.Position = UDim2.new(0,260,0,150)
-inputBox.Size = UDim2.new(1,-270,0,40)
-inputBox.PlaceholderText = "Arguments / New Value"
-inputBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-inputBox.TextColor3 = Color3.new(1,1,1)
-inputBox.BorderSizePixel = 0
-inputBox.Font = Enum.Font.SourceSans
-inputBox.TextSize = 16
 
 
--- Run Button
-local runBtn = Instance.new("TextButton")
-runBtn.Parent = main
-runBtn.Position = UDim2.new(0,260,0,205)
-runBtn.Size = UDim2.new(1,-270,0,45)
-runBtn.Text = "Run / Set"
-runBtn.BackgroundColor3 = Color3.fromRGB(70,130,180)
-runBtn.TextColor3 = Color3.new(1,1,1)
-runBtn.Font = Enum.Font.SourceSansBold
-runBtn.TextSize = 18
-runBtn.BorderSizePixel = 0
+local input = Instance.new("TextBox",panel)
+input.Position = UDim2.new(0,10,0,160)
+input.Size = UDim2.new(1,-20,0,38)
+input.BackgroundColor3 = Color3.fromRGB(40,40,55)
+input.TextColor3 = Color3.new(1,1,1)
+input.Font = Enum.Font.Gotham
+input.TextSize = 14
+input.ClearTextOnFocus = false
+Instance.new("UICorner",input)
 
-local refreshBtn = Instance.new("TextButton")
-refreshBtn.Parent = main
-refreshBtn.Position = UDim2.new(0,260,0,265)
-refreshBtn.Size = UDim2.new(1,-270,0,40)
-refreshBtn.Text = "Refresh"
-refreshBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
-refreshBtn.TextColor3 = Color3.new(1,1,1)
-refreshBtn.Font = Enum.Font.SourceSans
-refreshBtn.TextSize = 16
-refreshBtn.BorderSizePixel = 0
 
-local function clearList()
-	for _,v in ipairs(listFrame:GetChildren()) do
+local function makeBtn(t,y,c)
+
+	local b = Instance.new("TextButton",panel)
+	b.Position = UDim2.new(0,10,0,y)
+	b.Size = UDim2.new(1,-20,0,38)
+	b.Text = t
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 13
+	b.BackgroundColor3 = c
+	b.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner",b)
+
+	return b
+end
+
+
+local run = makeBtn("Run / Set",210,Color3.fromRGB(80,140,200))
+local fav = makeBtn("Favorite",255,Color3.fromRGB(200,160,60))
+local export = makeBtn("Export Config",300,Color3.fromRGB(100,160,120))
+
+
+local function parse(text)
+
+	local args = {}
+
+	for p in string.gmatch(text,"[^,]+") do
+
+		p = p:match("^%s*(.-)%s*$")
+
+		local n = tonumber(p)
+
+		if n then
+			table.insert(args,n)
+		elseif p=="true" then
+			table.insert(args,true)
+		elseif p=="false" then
+			table.insert(args,false)
+		else
+			table.insert(args,p)
+		end
+	end
+
+	return args
+end
+
+
+local function log(text)
+
+	table.insert(logs,1,text)
+
+	if #logs>100 then
+		table.remove(logs)
+	end
+end
+
+
+local function clear()
+
+	for _,v in ipairs(list:GetChildren()) do
 		if v:IsA("TextButton") then
 			v:Destroy()
 		end
@@ -93,180 +228,239 @@ local function clearList()
 end
 
 
-local function parseArgs(text)
+local function match(obj,q)
 
-	local args = {}
+	if q=="" then return true end
 
-	if text == "" then
-		return args
-	end
+	q = q:lower()
 
-	for part in string.gmatch(text,"[^,]+") do
-
-		part = part:match("^%s*(.-)%s*$")
-
-		local num = tonumber(part)
-
-		if num then
-			table.insert(args,num)
-
-		elseif part == "true" then
-			table.insert(args,true)
-
-		elseif part == "false" then
-			table.insert(args,false)
-
-		else
-			table.insert(args,part)
-		end
-	end
-
-	return args
+	return
+		obj.Name:lower():find(q) or
+		obj:GetFullName():lower():find(q)
 end
 
-local function scan()
 
-	items = {}
-	clearList()
+local function allowed(obj)
 
-	for _,obj in ipairs(game:GetDescendants()) do
+	if currentTab=="All" then return true end
+	if currentTab=="Remotes" then return obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") end
+	if currentTab=="Values" then return obj:IsA("ValueBase") end
+	if currentTab=="Players" then return obj:IsDescendantOf(Players) end
+	if currentTab=="Favorites" then return favorites[obj] end
+	if currentTab=="Logs" then return false end
 
-		if
-			obj:IsA("RemoteEvent") or
-			obj:IsA("RemoteFunction") or
-			obj:IsA("ValueBase")
-		then
-			table.insert(items,obj)
+	return true
+end
+
+
+local function build()
+
+	clear()
+	filtered = {}
+
+	if currentTab=="Logs" then
+
+		for _,v in ipairs(logs) do
+
+			local b = Instance.new("TextLabel",list)
+			b.Size = UDim2.new(1,-10,0,30)
+			b.BackgroundTransparency = 1
+			b.TextWrapped = true
+			b.TextXAlignment = Left
+			b.Text = v
+			b.Font = Enum.Font.Gotham
+			b.TextSize = 12
+			b.TextColor3 = Color3.new(1,1,1)
+		end
+
+		return
+	end
+
+
+	for _,obj in ipairs(items) do
+
+		if allowed(obj) and match(obj,search.Text) then
+			table.insert(filtered,obj)
 		end
 	end
 
 
-	for i,item in ipairs(items) do
+	for _,obj in ipairs(filtered) do
 
-		local btn = Instance.new("TextButton")
-		btn.Parent = listFrame
-		btn.Size = UDim2.new(1,-10,0,34)
+		local b = Instance.new("TextButton",list)
+		b.Size = UDim2.new(1,-10,0,34)
+		b.Text = "["..obj.ClassName.."] "..obj.Name
+		b.Font = Enum.Font.Gotham
+		b.TextSize = 12
+		b.BackgroundColor3 = Color3.fromRGB(42,42,56)
+		b.TextColor3 = Color3.new(1,1,1)
+		Instance.new("UICorner",b)
 
-		btn.Text =
-			i..". ["..item.ClassName.."] "..item.Name
+		b.MouseButton1Click:Connect(function()
 
-		btn.TextWrapped = true
-		btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-		btn.TextColor3 = Color3.new(1,1,1)
-		btn.BorderSizePixel = 0
-		btn.Font = Enum.Font.SourceSans
-		btn.TextSize = 14
+			selected = obj
 
-
-		btn.MouseButton1Click:Connect(function()
-
-			selectedItem = item
-
-			if item:IsA("ValueBase") then
-
-				info.Text =
-					"Name: "..item.Name..
-					"\nType: "..item.ClassName..
-					"\nValue: "..tostring(item.Value)
-
-				inputBox.Text = tostring(item.Value)
-
+			if obj:IsA("ValueBase") then
+				input.Text = tostring(obj.Value)
 			else
-
-				info.Text =
-					"Name: "..item.Name..
-					"\nType: "..item.ClassName..
-					"\nPath: "..item:GetFullName()
-
-				inputBox.Text = ""
-
+				input.Text = ""
 			end
+
+			info.Text =
+				"Name: "..obj.Name..
+				"\nType: "..obj.ClassName..
+				"\n\n"..obj:GetFullName()
 		end)
 	end
 
 
 	task.wait()
 
-	listFrame.CanvasSize = UDim2.new(
-		0,0,
-		0,layout.AbsoluteContentSize.Y + 10
-	)
+	list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+10)
 end
 
-runBtn.MouseButton1Click:Connect(function()
 
-	if not selectedItem then
-		warn("Nothing selected")
-		return
+local function scan()
+
+	items = {}
+
+	for _,v in ipairs(game:GetDescendants()) do
+
+		if
+			v:IsA("RemoteEvent") or
+			v:IsA("RemoteFunction") or
+			v:IsA("ValueBase")
+		then
+			table.insert(items,v)
+		end
 	end
 
-	if selectedItem:IsA("RemoteEvent") then
-
-		local args = parseArgs(inputBox.Text)
-
-		selectedItem:FireServer(unpack(args))
-
-		print("Fired:", selectedItem.Name)
+	build()
+end
 
 
-	elseif selectedItem:IsA("RemoteFunction") then
+run.MouseButton1Click:Connect(function()
 
-		local args = parseArgs(inputBox.Text)
-
-		local result = selectedItem:InvokeServer(unpack(args))
-
-		print("Invoked:", selectedItem.Name, result)
-
-elseif selectedItem:IsA("ValueBase") then
-
-		local text = inputBox.Text
+	if not selected then return end
 
 
-		if selectedItem:IsA("IntValue") or selectedItem:IsA("NumberValue") then
+	if selected:IsA("RemoteEvent") then
 
-			local num = tonumber(text)
+		local args = parse(input.Text)
 
-			if num then
-				selectedItem.Value = num
-			end
+		selected:FireServer(unpack(args))
 
-
-		elseif selectedItem:IsA("BoolValue") then
-
-			selectedItem.Value = (text == "true")
+		log("Fired "..selected.Name.." | "..input.Text)
 
 
-		elseif selectedItem:IsA("StringValue") then
+	elseif selected:IsA("RemoteFunction") then
 
-			selectedItem.Value = text
+		local args = parse(input.Text)
+
+		local r = selected:InvokeServer(unpack(args))
+
+		log("Invoked "..selected.Name.." -> "..tostring(r))
 
 
-		elseif selectedItem:IsA("Vector3Value") then
+	elseif selected:IsA("ValueBase") then
 
-			local parts = parseArgs(text)
+		local t = input.Text
 
-			if #parts == 3 then
-				selectedItem.Value = Vector3.new(
-					parts[1],
-					parts[2],
-					parts[3]
-				)
+		if selected:IsA("IntValue") or selected:IsA("NumberValue") then
+			local n = tonumber(t)
+			if n then selected.Value = n end
+
+		elseif selected:IsA("BoolValue") then
+			selected.Value = (t=="true")
+
+		elseif selected:IsA("StringValue") then
+			selected.Value = t
+
+		elseif selected:IsA("Vector3Value") then
+
+			local p = parse(t)
+
+			if #p==3 then
+				selected.Value = Vector3.new(p[1],p[2],p[3])
 			end
 		end
 
-
-		info.Text =
-			"Name: "..selectedItem.Name..
-			"\nType: "..selectedItem.ClassName..
-			"\nValue: "..tostring(selectedItem.Value)
-
-
-		print("Set value:", selectedItem.Name)
+		log("Set "..selected.Name.." = "..tostring(selected.Value))
 	end
 
+	build()
 end)
 
 
-refreshBtn.MouseButton1Click:Connect(scan)
+fav.MouseButton1Click:Connect(function()
+
+	if not selected then return end
+
+	favorites[selected] = not favorites[selected]
+
+	build()
+end)
+
+
+export.MouseButton1Click:Connect(function()
+
+	local data = {}
+
+	for obj,_ in pairs(favorites) do
+		table.insert(data,obj:GetFullName())
+	end
+
+	setclipboard(table.concat(data,"\n"))
+end)
+
+
+for name,btn in pairs(tabButtons) do
+
+	btn.MouseButton1Click:Connect(function()
+
+		currentTab = name
+
+		for _,b in pairs(tabButtons) do
+			b.BackgroundColor3 = Color3.fromRGB(30,30,40)
+		end
+
+		btn.BackgroundColor3 = Color3.fromRGB(60,60,90)
+
+		build()
+	end)
+end
+
+
+search:GetPropertyChangedSignal("Text"):Connect(build)
+
+
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+
+minimize.MouseButton1Click:Connect(function()
+
+	minimized = not minimized
+
+	if minimized then
+		main.Size = UDim2.new(0,760,0,45)
+	else
+		main.Size = UDim2.new(0,760,0,520)
+	end
+end)
+
+
+UserInputService.InputBegan:Connect(function(i,g)
+
+	if g then return end
+
+	if i.KeyCode==Enum.KeyCode.Insert then
+
+		visible = not visible
+		gui.Enabled = visible
+	end
+end)
+
 
 scan()
