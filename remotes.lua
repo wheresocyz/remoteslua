@@ -6,10 +6,6 @@ local UIS = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
-------------------------------------------------
--- GUI
-------------------------------------------------
-
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "RemotesLua"
 Gui.ResetOnSpawn = false
@@ -26,10 +22,6 @@ Main.Draggable = true
 
 Instance.new("UICorner",Main).CornerRadius = UDim.new(0,12)
 
-------------------------------------------------
--- Header
-------------------------------------------------
-
 local Header = Instance.new("Frame",Main)
 Header.Size = UDim2.new(1,0,0,40)
 Header.BackgroundColor3 = Color3.fromRGB(30,30,36)
@@ -45,10 +37,6 @@ Title.Font = Enum.Font.GothamBold
 Title.TextSize = 15
 Title.TextColor3 = Color3.new(1,1,1)
 
-------------------------------------------------
--- Search
-------------------------------------------------
-
 local Search = Instance.new("TextBox",Main)
 Search.Position = UDim2.new(0,10,0,50)
 Search.Size = UDim2.new(1,-20,0,32)
@@ -61,10 +49,6 @@ Search.BorderSizePixel = 0
 
 Instance.new("UICorner",Search)
 
-------------------------------------------------
--- List
-------------------------------------------------
-
 local List = Instance.new("ScrollingFrame",Main)
 List.Position = UDim2.new(0,10,0,90)
 List.Size = UDim2.new(0.5,-15,1,-100)
@@ -75,10 +59,6 @@ List.BorderSizePixel = 0
 
 local Layout = Instance.new("UIListLayout",List)
 Layout.Padding = UDim.new(0,5)
-
-------------------------------------------------
--- Info Panel
-------------------------------------------------
 
 local InfoPanel = Instance.new("Frame",Main)
 InfoPanel.Position = UDim2.new(0.5,5,0,90)
@@ -99,10 +79,6 @@ Info.TextSize = 13
 Info.TextColor3 = Color3.new(1,1,1)
 Info.Text = "Select a remote"
 
-------------------------------------------------
--- Args
-------------------------------------------------
-
 local Args = Instance.new("TextBox",InfoPanel)
 Args.Position = UDim2.new(0,10,0,170)
 Args.Size = UDim2.new(1,-20,0,40)
@@ -114,10 +90,6 @@ Args.TextSize = 13
 Args.BorderSizePixel = 0
 
 Instance.new("UICorner",Args)
-
-------------------------------------------------
--- Run Button
-------------------------------------------------
 
 local Run = Instance.new("TextButton",InfoPanel)
 Run.Position = UDim2.new(0,10,0,220)
@@ -131,16 +103,8 @@ Run.BorderSizePixel = 0
 
 Instance.new("UICorner",Run)
 
-------------------------------------------------
--- Logic
-------------------------------------------------
-
 local Remotes = {}
 local Selected = nil
-
-------------------------------------------------
--- Utils
-------------------------------------------------
 
 local function ParseArgs(text)
 
@@ -166,10 +130,6 @@ local function ParseArgs(text)
 
 	return args
 end
-
-------------------------------------------------
--- Add Remote
-------------------------------------------------
 
 local function AddRemote(obj)
 
@@ -205,10 +165,6 @@ local function AddRemote(obj)
 		UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y+5)
 end
 
-------------------------------------------------
--- Scan
-------------------------------------------------
-
 local function Scan()
 
 	for _,v in ipairs(game:GetDescendants()) do
@@ -228,10 +184,6 @@ game.DescendantAdded:Connect(function(obj)
 	end
 end)
 
-------------------------------------------------
--- Search Filter
-------------------------------------------------
-
 Search:GetPropertyChangedSignal("Text"):Connect(function()
 
 	local q = Search.Text:lower()
@@ -245,10 +197,6 @@ Search:GetPropertyChangedSignal("Text"):Connect(function()
 		end
 	end
 end)
-
-------------------------------------------------
--- Run
-------------------------------------------------
 
 Run.MouseButton1Click:Connect(function()
 
@@ -267,10 +215,6 @@ Run.MouseButton1Click:Connect(function()
 		end)
 	end
 end)
-
-------------------------------------------------
--- Toggle
-------------------------------------------------
 
 UIS.InputBegan:Connect(function(i,g)
 
